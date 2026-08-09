@@ -1,0 +1,39 @@
+{
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "include": [
+    "src",
+    "tests",
+    "tsdown.config.ts"
+  ],
+  "compilerOptions": {
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "importHelpers": true,
+    "declaration": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "esModuleInterop": true,
+    "target": "ESNext",
+    "types": [
+      "node"
+    ],
+    "useDefineForClassFields": false,
+    "declarationMap": true
+  }
+}

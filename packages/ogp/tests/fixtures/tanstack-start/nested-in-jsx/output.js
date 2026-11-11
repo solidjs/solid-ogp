@@ -1,5 +1,5 @@
-import { createOpenGraphImage } from '@solidjs/ogp/server'
 import { createMemo } from 'solid-js'
+import { createOpenGraphImage } from '@solidjs/ogp/server'
 import { Image } from '@solidjs/ogp'
 import { createSignal } from 'solid-js'
 const DynamicImage1ServerFunction = createServerFn({
@@ -11,27 +11,19 @@ const DynamicImage1ServerFunction = createServerFn({
   return createOpenGraphImage(<div>{`Hello ${r0 * 2}!`}</div>)
 })
 const DynamicImage1 = (props) => {
-  const payload = () => ({
-    data: {
-      values: props.values,
-    },
-    context: {},
-  })
+  const payload = () => ({ data: { values: props.values }, context: {} })
   const url = createMemo(
     () =>
       `${DynamicImage1ServerFunction.url}?payload=${encodeURIComponent(JSON.stringify(payload()))}&createServerFn&raw`,
   )
   return url
 }
+
 export default function Home() {
   const [count] = createSignal(0)
   return (
     <main>
-      <Image>
-        {DynamicImage1({
-          values: [count()],
-        })}
-      </Image>
+      <Image>{DynamicImage1({ values: [count()] })}</Image>
     </main>
   )
 }

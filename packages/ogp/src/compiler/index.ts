@@ -157,16 +157,14 @@ const DynamicImage${id} = (props) => {
 
 function createTanstackImage(image: DynamicImage, id: number): string {
   const serverFn = `DynamicImage${id}ServerFunction`;
-  return `const ${serverFn} = createServerFn({
-  method: "GET",
-  response: "raw",
-}).handler((ctx) => {
+  // The image request carries no x-tsr-serverFn header, so TanStack Start
+  // sends the returned Response as is.
+  return `const ${serverFn} = createServerFn({ method: 'GET' }).handler((ctx) => {
   const args = ctx.data.values;
   ${createArgumentDeclaration(image)}${createRenderCall(image)}
 });
 const DynamicImage${id} = (props) => {
-  const payload = () => ({ data: { values: props.values }, context: {} });
-  const url = createMemo(() => \`\${${serverFn}.url}?payload=\${encodeURIComponent(JSON.stringify(payload()))}&createServerFn&raw\`);
+  const url = createMemo(() => createTanstackImageUrl(${serverFn}.url, props.values));
   return url;
 };
 `;
@@ -269,7 +267,10 @@ export function compile(
     ['createMemo', 'solid-js'],
     ['createOpenGraphImage', '@solidjs/ogp/server'],
   ];
-  if (runtime === 'Solid') {
+  if (runtime === 'TanstackStart') {
+    needed.push(['createServerFn', '@tanstack/solid-start']);
+    needed.push(['createTanstackImageUrl', '@solidjs/ogp']);
+  } else {
     needed.push(['GET', '@solidjs/web/server-functions']);
     needed.push(['serverFunctionUrl', '@solidjs/web/server-functions']);
   }

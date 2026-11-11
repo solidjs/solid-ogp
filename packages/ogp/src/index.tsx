@@ -3,6 +3,7 @@ import { useHead } from '@solidjs/web';
 import type { ImageResponseOptions } from '@vercel/og';
 import type { ParentProps } from 'solid-js';
 import { children, createMemo, flatten } from 'solid-js';
+import { toJSON } from 'seroval';
 
 export interface DynamicImageProps {
   children: JSX.Element | (() => JSX.Element | Promise<JSX.Element>);
@@ -43,4 +44,14 @@ export function OpenGraph(props: ParentProps<{ origin: string }>): JSX.Element {
 export function urlFromImage(comp: JSX.Element): () => string {
   // The compiler turns `DynamicImage` into an accessor of its url.
   return () => readUrl(flatten(comp));
+}
+
+/**
+ * Builds the GET url of a TanStack Start server function called with
+ * `{ data: { values } }`. TanStack Start reads the `payload` search parameter
+ * with seroval's `fromJSON`, so the payload is encoded with seroval too.
+ */
+export function createTanstackImageUrl(url: string, values: unknown[]): string {
+  const payload = encodeURIComponent(JSON.stringify(toJSON({ data: { values } })));
+  return `${url}${url.includes('?') ? '&' : '?'}payload=${payload}`;
 }

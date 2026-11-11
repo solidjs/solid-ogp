@@ -1,19 +1,18 @@
+import { serverFunctionUrl } from '@solidjs/web/server-functions'
+import { GET } from '@solidjs/web/server-functions'
 import { createOpenGraphImage } from '@solidjs/ogp/server'
 import { createMemo } from 'solid-js'
-const DynamicImage1ServerFunction = (...args) => {
+const DynamicImage1ServerFunction = GET((...args) => {
   'use server'
 
   return createOpenGraphImage(<div>Hi!</div>, {
     emoji: 'openmoji',
   })
-}
+})
 const DynamicImage1 = (props) => {
-  const url = createMemo(() => {
-    return (
-      DynamicImage1ServerFunction.url.replace('_server', '_server/') +
-      `&args=${encodeURIComponent(JSON.stringify(props.values))}`
-    )
-  })
+  const url = createMemo(() =>
+    serverFunctionUrl(DynamicImage1ServerFunction, ...props.values),
+  )
   return url
 }
 DynamicImage1({

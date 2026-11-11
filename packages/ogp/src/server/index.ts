@@ -1,63 +1,83 @@
+import type { JSX } from '@solidjs/web';
 import { ImageResponse } from '@vercel/og';
 import type { ImageResponseOptions } from '@vercel/og';
 import { html } from 'satori-html';
-import type { JSX } from 'solid-js';
-export const parseSolidJSX = async (
-  jsx?:
-    | string
-    | JSX.Element
-    | (() => (string | JSX.Element) | Promise<string | JSX.Element>)
-    | { t: string },
-): Promise<ReturnType<typeof html> | undefined> => {
-  if (!jsx) return;
-  if (typeof jsx === 'function') {
-    jsx = await jsx();
-  }
-  if (jsx && typeof jsx === 'object' && Object.hasOwn(jsx, 't')) {
-    jsx = (jsx as any).t.replace(/data-hk=\S+?((?=>)|\s)/, '') as string;
-  }
-  if (typeof jsx !== 'string') {
-    return;
-  }
-  const converted = html(jsx);
-  return converted;
-};
+
 /**
- * Given, JSX, or a function that returns JSX, returns an image response.
- * Note: This can only be used on the server
+ * The object Solid's SSR compiler returns for a template. `t` is a string, or
+ * a list of strings when the template has holes, with `h` holding the holes
+ * that still have to resolve.
+ */
+export interface SSRTemplate {
+  t: string | string[];
+  h?: unknown[];
+}
+
+export type OpenGraphSource =
+  | string
+  | JSX.Element
+  | SSRTemplate
+  | (() => string | JSX.Element | SSRTemplate | Promise<string | JSX.Element | SSRTemplate>);
+
+export type SatoriNode = ReturnType<typeof html>;
+
+// Solid 2.0 marks hydrated elements with `_hk=<key>`. satori does not need it.
+const HYDRATION_KEY = /\s_hk=[^\s>]*/g;
+
+function isSSRTemplate(value: unknown): value is SSRTemplate {
+  return typeof value === 'object' && value !== null && Object.hasOwn(value, 't');
+}
+
+function readTemplate(template: SSRTemplate): string {
+  if (typeof template.t === 'string') {
+    return template.t;
+  }
+  if (template.h && template.h.length > 0) {
+    throw new Error('DynamicImage content must render synchronously');
+  }
+  return template.t.join('');
+}
+
+export async function parseSolidJSX(jsx?: OpenGraphSource): Promise<SatoriNode | undefined> {
+  // Unwrap the function form, then read the markup off the SSR template.
+  let value: unknown = typeof jsx === 'function' ? await jsx() : jsx;
+  if (isSSRTemplate(value)) {
+    value = readTemplate(value).replace(HYDRATION_KEY, '');
+  }
+  if (typeof value !== 'string' || value === '') {
+    return undefined;
+  }
+  return html(value);
+}
+
+/**
+ * Renders JSX, or a function that returns JSX, to an image response.
+ * Only works on the server.
  */
 export async function createOpenGraphImage(
-  jsx?:
-    | string
-    | JSX.Element
-    | (() => (string | JSX.Element) | Promise<string | JSX.Element>)
-    | { t: string },
+  jsx?: OpenGraphSource,
   opts?: ImageResponseOptions,
-) {
+): Promise<ImageResponse> {
   const converted = await parseSolidJSX(jsx);
-  const img = new ImageResponse(converted as any, {
-    ...(opts ?? {}),
+  // ImageResponse is typed for React elements, but satori reads the vnode tree as is.
+  return new ImageResponse(converted as unknown as ConstructorParameters<typeof ImageResponse>[0], {
+    ...opts,
+    // Tells the server function handler to send the response as is.
     headers: { 'X-Content-Raw': '' },
   });
-  return img;
 }
 
-export async function createBase64Image(jsx?: string | JSX.Element) {
-  const img = (await createOpenGraphImage(jsx)) as { body: ReadableStream };
+export async function createBase64Image(jsx?: OpenGraphSource): Promise<string> {
+  const img = await createOpenGraphImage(jsx);
   const buf = await new Response(img.body).arrayBuffer();
-  const url = 'data:image/png;base64,' + Buffer.from(buf).toString('base64');
-  return url;
+  return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`;
 }
-//
 
-/**
- * Parses the function arguments from the given URL
- * @param url
- * @returns
- */
-export const getArguments = (url: string) => {
+/** Reads the server function arguments from the `args` search parameter of a url. */
+export function getArguments(url: string): unknown[] {
   const argsStr = new URL(url).searchParams.get('args');
-  if (!argsStr) return [];
-  const args = JSON.parse(argsStr);
-  return args;
-};
+  if (!argsStr) {
+    return [];
+  }
+  return JSON.parse(argsStr) as unknown[];
+}

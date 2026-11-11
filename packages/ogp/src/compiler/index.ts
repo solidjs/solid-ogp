@@ -16,6 +16,15 @@ export const transformOG =
             if (runtime == 'TanstackStart') {
               addDynamicImagesTanstack(dynamicImages, t, path);
             } else {
+              // Solid 2.0 server functions: GET declares a read with a url,
+              // and serverFunctionUrl builds that url with the arguments.
+              babelUtils.importIfNotThere(path, t, 'GET', '@solidjs/web/server-functions');
+              babelUtils.importIfNotThere(
+                path,
+                t,
+                'serverFunctionUrl',
+                '@solidjs/web/server-functions',
+              );
               addDynamicImages(dynamicImages, t, path);
             }
           }

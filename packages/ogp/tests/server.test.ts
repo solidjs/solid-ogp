@@ -36,11 +36,26 @@ describe('parseSolidJSX', () => {
     });
   });
 
-  it('strips the hydration key so it does not reach satori', async () => {
-    const vnode = await parseSolidJSX({ t: '<div data-hk=0-0-1 id="keep">hi</div>' });
+  it('strips every hydration key so none reaches satori', async () => {
+    const vnode = await parseSolidJSX({
+      t: '<div _hk=0-0-1 id="keep"><span _hk=0-0-2>hi</span><b _hk=0-0-3>x</b></div>',
+    });
     const serialized = JSON.stringify(vnode);
-    expect(serialized).not.toContain('data-hk');
+    expect(serialized).not.toContain('_hk');
     expect(serialized).toContain('keep');
+  });
+
+  it('joins the strings of a template that had holes', async () => {
+    const vnode = await parseSolidJSX({ t: ['<div>', 'joined', '</div>'], h: [] });
+    expect(vnode).toMatchObject({
+      props: { children: [{ type: 'div', props: { children: 'joined' } }] },
+    });
+  });
+
+  it('rejects a template with holes that have not resolved', async () => {
+    await expect(parseSolidJSX({ t: ['<div>', '</div>'], h: [() => 'later'] })).rejects.toThrow(
+      'DynamicImage content must render synchronously',
+    );
   });
 
   it('returns undefined for values it cannot turn into markup', async () => {

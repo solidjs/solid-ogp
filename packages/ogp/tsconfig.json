@@ -17,7 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "bundler",
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@solidjs/web",
     "esModuleInterop": true,
     "target": "ESNext",
     "types": ["node"],

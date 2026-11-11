@@ -2,7 +2,8 @@ import babel from '@babel/core';
 import { babel as babelUtils } from '@solid-mediakit/shared';
 import type { FilterPattern } from 'unplugin';
 import { createUnplugin } from 'unplugin';
-import { Runtime, transformOG } from '../compiler';
+import type { Runtime } from '../compiler';
+import { transformOG } from '../compiler';
 
 export type Options = {
   filter?: {
@@ -29,11 +30,12 @@ export const unplugin = createUnplugin((opts?: Options) => {
         plugins: [[transformOG(opts?.runtime)]],
         parserOpts: { plugins },
       });
-      if (!res?.code) return null;
-      if (typeof log === 'boolean') {
-        if (log == true) console.log(id, res.code);
-      } else if (log && log.test(id)) {
-        // console.log("LOGGING!!", id, log.test(id))
+      if (!res?.code) {
+        return null;
+      }
+      // The log option prints the compiled output for debugging.
+      if (log === true || (log instanceof RegExp && log.test(id))) {
+        // oxlint-disable-next-line no-console
         console.log(id, res.code);
       }
       return { code: res.code, map: res.map };

@@ -23,7 +23,7 @@ describe('parseSolidJSX', () => {
   });
 
   it('awaits a function that returns a promise', async () => {
-    const vnode = await parseSolidJSX(async () => '<span>async</span>');
+    const vnode = await parseSolidJSX(async () => await Promise.resolve('<span>async</span>'));
     expect(vnode).toMatchObject({
       props: { children: [{ type: 'span', props: { children: 'async' } }] },
     });
@@ -59,9 +59,10 @@ describe('parseSolidJSX', () => {
   });
 
   it('returns undefined for values it cannot turn into markup', async () => {
-    await expect(parseSolidJSX(123 as never)).resolves.toBeUndefined();
-    await expect(parseSolidJSX({ nope: true } as never)).resolves.toBeUndefined();
-    await expect(parseSolidJSX(() => 42 as never)).resolves.toBeUndefined();
+    await expect(parseSolidJSX(123)).resolves.toBeUndefined();
+    const unknownObject: object = { nope: true };
+    await expect(parseSolidJSX(unknownObject)).resolves.toBeUndefined();
+    await expect(parseSolidJSX(() => 42)).resolves.toBeUndefined();
   });
 });
 

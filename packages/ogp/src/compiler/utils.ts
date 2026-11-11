@@ -1,217 +1,226 @@
 import * as babel from '@babel/core';
 import { babel as babelUtils } from '@solid-mediakit/shared';
 
-type DynamicImage = {
+type Types = typeof babel.types;
+
+export interface DynamicImage {
   element: babel.types.JSXElement;
   reactives: number;
   imageOptions?: babel.types.ObjectExpression;
-};
+}
 
-const extractChild = (t: typeof babel.types, element: babel.types.JSXElement) => {
-  const elementChildren = element.children.filter((ch) =>
-    t.isJSXElement(ch),
-  ) as babel.types.JSXElement[];
-  if (!elementChildren.length) return null;
-  return elementChildren.length === 1
-    ? elementChildren[0]
-    : t.jsxElement(
-        t.jsxOpeningElement(t.jsxIdentifier('div'), []),
-        t.jsxClosingElement(t.jsxIdentifier('div')),
-        elementChildren,
-        false,
-      );
-};
-
-const extractImageOptions = (element: babel.types.JSXElement) => {
-  const index = element.openingElement.attributes.findIndex(
-    (a) => 'name' in a && a.name.name === 'imageOptions',
+function extractChild(t: Types, element: babel.types.JSXElement): babel.types.JSXElement | null {
+  const elementChildren: babel.types.JSXElement[] = [];
+  for (const child of element.children) {
+    if (t.isJSXElement(child)) {
+      elementChildren.push(child);
+    }
+  }
+  if (elementChildren.length === 0) {
+    return null;
+  }
+  if (elementChildren.length === 1) {
+    return elementChildren[0];
+  }
+  // Satori needs one root, so wrap several children in a div.
+  return t.jsxElement(
+    t.jsxOpeningElement(t.jsxIdentifier('div'), []),
+    t.jsxClosingElement(t.jsxIdentifier('div')),
+    elementChildren,
+    false,
   );
-  if (index === -1) return;
-  const attr = element.openingElement.attributes[index];
-  if (
-    attr.type === 'JSXSpreadAttribute' ||
-    attr.value?.type !== 'JSXExpressionContainer' ||
-    attr.value.expression.type !== 'ObjectExpression'
-  )
-    return;
-  element.openingElement.attributes.splice(index, 1);
-  return attr.value.expression;
-};
+}
 
-export const replaceDynamicImages = (
-  t: typeof babel.types,
-  path: babel.NodePath<babel.types.Program>,
-) => {
-  const DynamicImages: DynamicImage[] = [];
-  const replaceDynamicImageVisitor: babel.Visitor = {
-    JSXElement(elementPath) {
-      const name = elementPath.node.openingElement.name;
-      if (t.isJSXIdentifier(name) && name.name === 'DynamicImage') {
-        const imageOptions = extractImageOptions(elementPath.node);
-        const reactives = extractAndReplaceReactives(t, elementPath);
-        const child = extractChild(t, elementPath.node);
-        if (!child) throw new Error('DynamicImage must have a child element');
-        DynamicImages.push({
-          reactives: reactives.length,
-          element: t.cloneNode(child),
-          imageOptions,
-        });
-        elementPath.node.openingElement.selfClosing = true;
-        elementPath.node.closingElement = null;
-        name.name = `DynamicImage${DynamicImages.length}`;
+function extractImageOptions(
+  element: babel.types.JSXElement,
+): babel.types.ObjectExpression | undefined {
+  const attributes = element.openingElement.attributes;
+  for (let index = 0; index < attributes.length; index++) {
+    const attr = attributes[index];
+    if (attr.type !== 'JSXAttribute' || attr.name.name !== 'imageOptions') {
+      continue;
+    }
+    // Only an inline object literal can move to the server function.
+    if (
+      attr.value?.type !== 'JSXExpressionContainer' ||
+      attr.value.expression.type !== 'ObjectExpression'
+    ) {
+      return undefined;
+    }
+    attributes.splice(index, 1);
+    return attr.value.expression;
+  }
+  return undefined;
+}
 
-        const parent = elementPath.parentPath;
-        const isJsx = parent.isJSXElement() || parent.isJSXFragment();
-        elementPath.replaceWith(
-          (isJsx ? t.jsxExpressionContainer : t.expressionStatement)(
-            t.callExpression(t.identifier(name.name), [
-              t.objectExpression([
-                t.objectProperty(t.identifier('values'), t.arrayExpression(reactives)),
-              ]),
-            ]),
-          ),
-        );
-      }
-    },
-  };
+/**
+ * Replaces each expression that may change between renders with `r<n>`, and
+ * returns the replaced expressions in order. They become the server function's
+ * arguments.
+ */
+export function extractAndReplaceReactives(
+  t: Types,
+  elementPath: babel.NodePath<babel.types.JSXElement>,
+): babel.types.Expression[] {
+  const reactives: babel.types.Expression[] = [];
 
-  path.traverse(replaceDynamicImageVisitor);
-  return DynamicImages;
-};
-export const extractAndReplaceReactives = (
-  t: typeof babel.types,
-  path: babel.NodePath<babel.types.JSXElement>,
-) => {
-  const Reactives: babel.types.Expression[] = [];
-  const replaceReactivesVisitor: babel.Visitor = {
+  function replaceExpression(
+    path: babel.NodePath<
+      babel.types.CallExpression | babel.types.MemberExpression | babel.types.Identifier
+    >,
+  ): void {
+    const expr = path.node;
+    path.replaceWith(t.identifier(`r${reactives.length}`));
+    reactives.push(t.cloneNode(expr));
+    path.skip();
+  }
+
+  elementPath.traverse({
     Property(path) {
-      if (path.node.type !== 'ClassPrivateProperty') {
-        const expr = path.node.key;
-        if (path.node.computed && expr.type !== 'PrivateName') {
-          path.node.key = t.identifier(`r${Reactives.length}`);
-          Reactives.push(t.cloneNode(expr));
-        }
-        path.skip();
+      if (path.node.type === 'ClassPrivateProperty') {
+        return;
       }
-    },
-    // Any call expression could be dynamic so replace
-    CallExpression(path) {
-      const expr = path.node;
-      path.replaceWith(t.identifier(`r${Reactives.length}`));
-      Reactives.push(t.cloneNode(expr));
+      // A computed key is an expression. A plain key is a static name.
+      const key = path.node.key;
+      if (path.node.computed && key.type !== 'PrivateName') {
+        path.node.key = t.identifier(`r${reactives.length}`);
+        reactives.push(t.cloneNode(key));
+      }
       path.skip();
     },
+    // Any call could return a different value.
+    CallExpression: replaceExpression,
     // Replace the whole access rather than descending into it, otherwise the
     // property names of `a.b.c` are each extracted as their own reactive.
-    MemberExpression(path) {
-      const expr = path.node;
-      path.replaceWith(t.identifier(`r${Reactives.length}`));
-      Reactives.push(t.cloneNode(expr));
-      path.skip();
-    },
-    Identifier(path) {
-      const expr = path.node;
-      path.replaceWith(t.identifier(`r${Reactives.length}`));
-      Reactives.push(t.cloneNode(expr));
-      path.skip();
-    },
-    // JSXExpressionContainer(path) {
-    //   const expr = path.node.expression
-    //   if (t.isJSXEmptyExpression(expr)) return
-    //   if (!isDynamic(t, path)) return
-    //   path.node.expression = t.identifier(`r${Reactives.length}`)
-    //   Reactives.push(t.cloneNode(expr))
-    // },
-  };
-  path.traverse(replaceReactivesVisitor);
-  return Reactives;
-};
+    MemberExpression: replaceExpression,
+    Identifier: replaceExpression,
+  });
+  return reactives;
+}
 
-/**Generates the expression that destructures the arguments from the request*/
-export const argumentDeclaration = (t: typeof babel.types, image: DynamicImage) => {
+export function replaceDynamicImages(
+  t: Types,
+  programPath: babel.NodePath<babel.types.Program>,
+): DynamicImage[] {
+  const images: DynamicImage[] = [];
+  programPath.traverse({
+    JSXElement(elementPath) {
+      const name = elementPath.node.openingElement.name;
+      if (!t.isJSXIdentifier(name) || name.name !== 'DynamicImage') {
+        return;
+      }
+      const imageOptions = extractImageOptions(elementPath.node);
+      const reactives = extractAndReplaceReactives(t, elementPath);
+      const child = extractChild(t, elementPath.node);
+      if (!child) {
+        throw new Error('DynamicImage must have a child element');
+      }
+      images.push({
+        reactives: reactives.length,
+        element: t.cloneNode(child),
+        imageOptions,
+      });
+
+      // Call the generated component with the reactive values.
+      const call = t.callExpression(t.identifier(`DynamicImage${images.length}`), [
+        t.objectExpression([
+          t.objectProperty(t.identifier('values'), t.arrayExpression(reactives)),
+        ]),
+      ]);
+      const parent = elementPath.parentPath;
+      elementPath.replaceWith(
+        parent.isJSXElement() || parent.isJSXFragment()
+          ? t.jsxExpressionContainer(call)
+          : t.expressionStatement(call),
+      );
+    },
+  });
+  return images;
+}
+
+/** Creates `const [r0, r1, ...] = args`, or null when there are no arguments. */
+export function createArgumentDeclaration(
+  t: Types,
+  image: DynamicImage,
+): babel.types.VariableDeclaration | null {
+  if (image.reactives === 0) {
+    return null;
+  }
   const args: babel.types.Identifier[] = [];
   for (let i = 0; i < image.reactives; i++) {
     args.push(t.identifier(`r${i}`));
   }
-  const argsDecl =
-    args.length === 0
-      ? null
-      : t.variableDeclaration('const', [
-          t.variableDeclarator(t.arrayPattern(args), t.identifier('args')),
-        ]);
-  return argsDecl;
-};
-/**Add dynamic image server functions for Solid Start */
-export const addDynamicImages = (
+  return t.variableDeclaration('const', [
+    t.variableDeclarator(t.arrayPattern(args), t.identifier('args')),
+  ]);
+}
+
+function pushDynamicImages(
   images: DynamicImage[],
-  t: typeof babel.types,
-  path: babel.NodePath<babel.types.Program>,
-) => {
+  t: Types,
+  programPath: babel.NodePath<babel.types.Program>,
+  template: (
+    replacements: Record<string, unknown>,
+  ) => babel.types.Statement | babel.types.Statement[],
+): void {
   for (let i = 0; i < images.length; i++) {
     const image = images[i];
-    const template = babel.template(
-      `const %%serverFnName%% = GET((...args)=>{
-          'use server';
-          %%args%%
-          return createOpenGraphImage(%%jsx%%, %%imageOptions%%);
-      });
-      const %%compName%% = (props)=>{
+    babelUtils.pushStmts(
+      template({
+        compName: `DynamicImage${i + 1}`,
+        serverFnName: `DynamicImage${i + 1}ServerFunction`,
+        jsx: image.element,
+        args: createArgumentDeclaration(t, image),
+        imageOptions: image.imageOptions,
+      }),
+      programPath,
+      true,
+    );
+  }
+}
+
+/** Adds the server functions and url components for SolidStart. */
+export function addDynamicImages(
+  images: DynamicImage[],
+  t: Types,
+  programPath: babel.NodePath<babel.types.Program>,
+): void {
+  const template = babel.template(
+    `const %%serverFnName%% = GET((...args)=>{
+        'use server';
+        %%args%%
+        return createOpenGraphImage(%%jsx%%, %%imageOptions%%);
+    });
+    const %%compName%% = (props)=>{
       const url = createMemo(()=>serverFunctionUrl(%%serverFnName%%, ...props.values));
       return url;
-  };`,
-      { plugins: ['jsx'] },
-    );
+    };`,
+    { plugins: ['jsx'] },
+  );
+  pushDynamicImages(images, t, programPath, template);
+}
 
-    const argsDecl = argumentDeclaration(t, image);
-
-    babelUtils.pushStmts(
-      template({
-        compName: `DynamicImage${i + 1}`,
-        serverFnName: `DynamicImage${i + 1}ServerFunction`,
-        jsx: image.element,
-        args: argsDecl,
-        imageOptions: image.imageOptions,
-      }) as any,
-      path,
-      true,
-    );
-  }
-};
-
-export const addDynamicImagesTanstack = (
+/** Adds the server functions and url components for TanStack Start. */
+export function addDynamicImagesTanstack(
   images: DynamicImage[],
-  t: typeof babel.types,
-  path: babel.NodePath<babel.types.Program>,
-) => {
-  for (let i = 0; i < images.length; i++) {
-    const image = images[i];
-    const template = babel.template(
-      `const %%serverFnName%% = createServerFn({
-				method: "GET",
-				response: "raw",
-			}).handler((ctx) => {
-				const args = ctx.data.values;
-				%%args%%
-				return createOpenGraphImage(%%jsx%%, %%imageOptions%%);
-			})
-			const %%compName%% = (props) => {
-				const payload = () => ({"data":{"values":props.values},"context":{}})
-				const url = createMemo(() => \`\${%%serverFnName%%.url}?payload=\${encodeURIComponent(JSON.stringify(payload()))}&createServerFn&raw\`)
-				return url
-			}
-			`,
-    );
-    const argsDecl = argumentDeclaration(t, image);
-    babelUtils.pushStmts(
-      template({
-        compName: `DynamicImage${i + 1}`,
-        serverFnName: `DynamicImage${i + 1}ServerFunction`,
-        jsx: image.element,
-        args: argsDecl,
-        imageOptions: image.imageOptions,
-      }) as any,
-      path,
-      true,
-    );
-  }
-};
+  t: Types,
+  programPath: babel.NodePath<babel.types.Program>,
+): void {
+  const template = babel.template(
+    `const %%serverFnName%% = createServerFn({
+      method: "GET",
+      response: "raw",
+    }).handler((ctx) => {
+      const args = ctx.data.values;
+      %%args%%
+      return createOpenGraphImage(%%jsx%%, %%imageOptions%%);
+    })
+    const %%compName%% = (props) => {
+      const payload = () => ({"data":{"values":props.values},"context":{}})
+      const url = createMemo(() => \`\${%%serverFnName%%.url}?payload=\${encodeURIComponent(JSON.stringify(payload()))}&createServerFn&raw\`)
+      return url
+    }
+    `,
+  );
+  pushDynamicImages(images, t, programPath, template);
+}

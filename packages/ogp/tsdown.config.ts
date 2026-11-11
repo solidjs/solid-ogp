@@ -22,8 +22,9 @@ const entry = {
  * map in package.json stays accurate. The package is ESM (`"type": "module"`),
  * so ESM keeps `.js` and only CJS needs a distinct extension.
  */
-const outExtensions = ({ format }: { format: string }) =>
-  format === 'cjs' ? { js: '.cjs', dts: '.d.cts' } : { js: '.js', dts: '.d.ts' };
+function outExtensions({ format }: { format: string }): { js: string; dts: string } {
+  return format === 'cjs' ? { js: '.cjs', dts: '.d.cts' } : { js: '.js', dts: '.d.ts' };
+}
 
 // JSX is left preserved (via `jsx: "preserve"` in tsconfig.json) so that the
 // consuming app's own Solid compiler decides between DOM and SSR output.

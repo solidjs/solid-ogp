@@ -7,14 +7,21 @@ import { unplugin } from '../src/unplugin';
  * The plugin's `transform` never touches `this`, so the raw rollup form can be
  * driven directly instead of standing up a real bundler.
  */
-const transform = (code: string, id: string, opts?: Options) => {
-  const plugin = unplugin.raw(opts, { framework: 'rollup' }) as {
-    transform: (code: string, id: string) => Promise<{ code: string } | null>;
-  };
-  return plugin.transform(code, id);
-};
+type TransformResult = { code: string } | null;
 
-const src = (file: string) => join(process.cwd(), 'src', file);
+async function transform(code: string, id: string, opts?: Options): Promise<TransformResult> {
+  const plugin = unplugin.raw(opts, { framework: 'rollup' });
+  if (Array.isArray(plugin) || typeof plugin.transform !== 'function') {
+    throw new TypeError('expected a single plugin with a transform hook');
+  }
+  // oxlint-disable-next-line no-unsafe-type-assertion
+  const run = plugin.transform as (code: string, id: string) => Promise<TransformResult>;
+  return run(code, id);
+}
+
+function src(file: string): string {
+  return join(process.cwd(), 'src', file);
+}
 
 const SOURCE = `const coolVar = <DynamicImage><div>{signal()}</div></DynamicImage>`;
 

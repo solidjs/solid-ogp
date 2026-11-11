@@ -60,7 +60,7 @@ export async function createOpenGraphImage(
 ): Promise<ImageResponse> {
   const converted = await parseSolidJSX(jsx);
   // ImageResponse is typed for React elements, but satori reads the vnode tree as is.
-  return new ImageResponse(converted as unknown as ConstructorParameters<typeof ImageResponse>[0], {
+  return new ImageResponse(converted, {
     ...opts,
     // Tells the server function handler to send the response as is.
     headers: { 'X-Content-Raw': '' },
@@ -79,5 +79,6 @@ export function getArguments(url: string): unknown[] {
   if (!argsStr) {
     return [];
   }
-  return JSON.parse(argsStr) as unknown[];
+  const args: unknown = JSON.parse(argsStr);
+  return Array.isArray(args) ? args : [];
 }

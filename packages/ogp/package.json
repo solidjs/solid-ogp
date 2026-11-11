@@ -2,26 +2,38 @@
   "name": "@solidjs/ogp",
   "version": "0.0.0",
   "description": "An Open Graph / Dynamic image utility library for Solid.",
-  "type": "module",
+  "keywords": [
+    "og-image",
+    "open-graph",
+    "satori",
+    "solid",
+    "solid-js"
+  ],
+  "homepage": "https://github.com/solidjs/solid-ogp/tree/main/packages/ogp#readme",
+  "bugs": {
+    "url": "https://github.com/solidjs/solid-ogp/issues"
+  },
   "license": "MIT",
+  "author": "",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/solidjs/solid-ogp.git",
     "directory": "packages/ogp"
   },
-  "bugs": {
-    "url": "https://github.com/solidjs/solid-ogp/issues"
-  },
-  "homepage": "https://github.com/solidjs/solid-ogp/tree/main/packages/ogp#readme",
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "dist"
   ],
+  "type": "module",
   "types": "./dist/index.d.ts",
-  "engines": {
-    "node": ">=22"
+  "typesVersions": {
+    "*": {
+      "server": [
+        "./dist/server.d.ts"
+      ],
+      "unplugin": [
+        "./dist/unplugin.d.ts"
+      ]
+    }
   },
   "exports": {
     ".": {
@@ -74,15 +86,8 @@
     },
     "./package.json": "./package.json"
   },
-  "typesVersions": {
-    "*": {
-      "server": [
-        "./dist/server.d.ts"
-      ],
-      "unplugin": [
-        "./dist/unplugin.d.ts"
-      ]
-    }
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",
@@ -91,14 +96,13 @@
     "lint:pkg": "tsdown --publint --attw",
     "test": "vitest run"
   },
-  "keywords": [
-    "solid",
-    "solid-js",
-    "open-graph",
-    "og-image",
-    "satori"
-  ],
-  "author": "",
+  "dependencies": {
+    "@babel/core": "^7.28.0",
+    "@solid-mediakit/shared": "^0.0.6",
+    "@vercel/og": "^1.0.1",
+    "satori-html": "^0.3.2",
+    "unplugin": "^3.3.0"
+  },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
     "@babel/preset-typescript": "^7.27.0",
@@ -113,15 +117,11 @@
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
-  "dependencies": {
-    "@babel/core": "^7.28.0",
-    "@solid-mediakit/shared": "^0.0.6",
-    "@vercel/og": "^1.0.1",
-    "satori-html": "^0.3.2",
-    "unplugin": "^3.3.0"
-  },
   "peerDependencies": {
     "@solidjs/meta": "^0.29.4",
     "solid-js": "^1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

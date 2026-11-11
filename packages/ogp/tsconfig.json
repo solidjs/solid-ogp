@@ -1,19 +1,9 @@
 {
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "include": [
-    "src",
-    "tests",
-    "tsdown.config.ts"
-  ],
+  "exclude": ["node_modules", "dist"],
+  "include": ["src", "tests", "tsdown.config.ts"],
   "compilerOptions": {
     "module": "ESNext",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
@@ -30,9 +20,7 @@
     "jsxImportSource": "solid-js",
     "esModuleInterop": true,
     "target": "ESNext",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "useDefineForClassFields": false,
     "declarationMap": true
   }

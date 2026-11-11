@@ -57,7 +57,7 @@ describe('transform', () => {
       runtime: 'TanstackStart',
     });
     expect(res!.code).toContain('createServerFn(');
-    expect(res!.code).toContain('response: "raw"');
+    expect(res!.code).toContain("import { createServerFn } from '@tanstack/solid-start'");
     expect(res!.code).not.toContain("'use server'");
   });
 

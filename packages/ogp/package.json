@@ -100,6 +100,7 @@
     "magic-string": "^1.4.5",
     "oxc-parser": "^0.158.0",
     "satori-html": "^0.3.2",
+    "seroval": "^1.7.0",
     "unplugin": "^3.3.0",
     "unplugin-utils": "^0.3.2"
   },

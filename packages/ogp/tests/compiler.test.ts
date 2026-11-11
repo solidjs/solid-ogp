@@ -49,8 +49,8 @@ for (const [runtime, folder] of RUNTIMES) {
         const result = compile(file, code, { runtime });
         const actual = await formatCode(result?.code ?? code, isTs ? 'babel-ts' : 'babel');
         const outputFile = join(dir, 'output.js');
-        // A missing output is written, so a new fixture only needs its code.
-        if (!existsSync(outputFile)) {
+        // UPDATE=1 writes the outputs, so a new fixture only needs its code.
+        if (process.env.UPDATE === '1') {
           writeFileSync(outputFile, actual);
         }
         expect(actual).toBe(readFileSync(outputFile, 'utf8'));

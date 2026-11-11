@@ -172,7 +172,10 @@ const DynamicImage${id} = (props) => {
 `;
 }
 
-/** Collects the names each module already imports, by source. */
+/**
+ * Collects, by source, the names each module imports under their own name.
+ * An aliased import (`import { a as b }`) does not bind `a`, so it is left out.
+ */
 function readImports(program: Node): Map<string, Set<string>> {
   const imports = new Map<string, Set<string>>();
   for (const statement of program.body as Node[]) {
@@ -182,8 +185,11 @@ function readImports(program: Node): Map<string, Set<string>> {
     const source = statement.source.value as string;
     const names = imports.get(source) ?? new Set<string>();
     for (const specifier of statement.specifiers as Node[]) {
-      if (specifier.type === 'ImportSpecifier') {
-        names.add(specifier.imported.name as string);
+      if (
+        specifier.type === 'ImportSpecifier' &&
+        specifier.imported.name === specifier.local.name
+      ) {
+        names.add(specifier.local.name as string);
       }
     }
     imports.set(source, names);
@@ -268,11 +274,17 @@ export function compile(
     needed.push(['serverFunctionUrl', '@solidjs/web/server-functions']);
   }
   const imports = readImports(program);
-  let header = '';
+  const missing = new Map<string, string[]>();
   for (const [name, source] of needed) {
     if (!imports.get(source)?.has(name)) {
-      header += `import { ${name} } from '${source}';\n`;
+      const names = missing.get(source) ?? [];
+      names.push(name);
+      missing.set(source, names);
     }
+  }
+  let header = '';
+  for (const [source, names] of missing) {
+    header += `import { ${names.join(', ')} } from '${source}';\n`;
   }
   s.prepend(header);
 

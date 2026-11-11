@@ -1,7 +1,6 @@
 import { createMemo } from 'solid-js'
 import { createOpenGraphImage } from '@solidjs/ogp/server'
-import { GET } from '@solidjs/web/server-functions'
-import { serverFunctionUrl } from '@solidjs/web/server-functions'
+import { GET, serverFunctionUrl } from '@solidjs/web/server-functions'
 import { createSignal } from 'solid-js'
 const DynamicImage1ServerFunction = GET((...args) => {
   'use server'

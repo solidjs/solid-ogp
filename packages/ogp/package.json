@@ -1,6 +1,6 @@
 {
   "name": "@solidjs/ogp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "An Open Graph / Dynamic image utility library for Solid.",
   "keywords": [
     "og-image",

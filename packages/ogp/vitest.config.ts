@@ -7,7 +7,5 @@ export default defineConfig({
   test: {
     // The plugin sets a browser environment. These tests run on the server.
     environment: 'node',
-    // babel-plugin-tester calls `describe`/`it` off the global scope.
-    globals: true,
   },
 });

@@ -1,9 +1,8 @@
-import babel from '@babel/core';
-import { babel as babelUtils } from '@solid-mediakit/shared';
 import type { FilterPattern } from 'unplugin';
 import { createUnplugin } from 'unplugin';
+import { createFilter } from 'unplugin-utils';
 import type { Runtime } from '../compiler';
-import { transformOG } from '../compiler';
+import { compile } from '../compiler';
 
 export type Options = {
   filter?: {
@@ -14,31 +13,32 @@ export type Options = {
   runtime?: Runtime;
 };
 
+const DEFAULT_INCLUDE = 'src/**/*.{jsx,tsx,ts,js,mjs,cjs}';
+const DEFAULT_EXCLUDE = 'node_modules/**/*.{jsx,tsx,ts,js,mjs,cjs}';
+
 export const unplugin = createUnplugin((opts?: Options) => {
-  const filter = babelUtils.getFilter(opts?.filter);
+  const filter = createFilter(
+    opts?.filter?.include ?? DEFAULT_INCLUDE,
+    opts?.filter?.exclude ?? DEFAULT_EXCLUDE,
+  );
   const log = opts?.log;
   return {
     enforce: 'pre',
     name: 'unplugin-dynamic-image',
-    async transform(code, id) {
-      if (!filter(id)) {
+    transform(code, id) {
+      if (!filter(id.split('?')[0])) {
         return null;
       }
-      const plugins: babel.ParserOptions['plugins'] = ['typescript', 'jsx'];
-
-      const res = await babel.transformAsync(code, {
-        plugins: [[transformOG(opts?.runtime)]],
-        parserOpts: { plugins },
-      });
-      if (!res?.code) {
+      const result = compile(id, code, { runtime: opts?.runtime });
+      if (!result) {
         return null;
       }
       // The log option prints the compiled output for debugging.
       if (log === true || (log instanceof RegExp && log.test(id))) {
         // oxlint-disable-next-line no-console
-        console.log(id, res.code);
+        console.log(id, result.code);
       }
-      return { code: res.code, map: res.map };
+      return result;
     },
   };
 });

@@ -48,7 +48,7 @@ describe('transform', () => {
     const res = await transform(SOURCE, src('routes/index.tsx'));
     expect(res!.code).toContain('DynamicImage1ServerFunction');
     expect(res!.code).toContain("'use server'");
-    expect(res!.code).toContain('import { createOpenGraphImage } from "@solidjs/ogp/server"');
+    expect(res!.code).toContain("import { createOpenGraphImage } from '@solidjs/ogp/server'");
     expect(res!.code).toContain('DynamicImage1({');
   });
 
@@ -62,9 +62,7 @@ describe('transform', () => {
   });
 
   it('leaves files without a DynamicImage alone', async () => {
-    const res = await transform(`const x = <div>{signal()}</div>`, src('plain.tsx'));
-    expect(res!.code).not.toContain('ServerFunction');
-    expect(res!.code).not.toContain('createOpenGraphImage');
+    expect(await transform(`const x = <div>{signal()}</div>`, src('plain.tsx'))).toBeNull();
   });
 
   it('surfaces a DynamicImage that has no element child', async () => {

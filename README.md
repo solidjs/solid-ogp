@@ -11,13 +11,13 @@ pnpm install @solidjs/ogp
 ### Usage
 
 ```tsx
-import { Title } from '@solidjs/meta'
-import Counter from '~/components/Counter'
-import { DynamicImage, Image } from '@solidjs/ogp'
-import { createSignal } from 'solid-js'
+import { Title } from '@solidjs/meta';
+import Counter from '~/components/Counter';
+import { DynamicImage, Image } from '@solidjs/ogp';
+import { createSignal } from 'solid-js';
 
 export default function Home() {
-  const [count, setCount] = createSignal(0)
+  const [count, setCount] = createSignal(0);
   return (
     <main>
       <Title>Hello World</Title>
@@ -41,6 +41,6 @@ export default function Home() {
         </DynamicImage>
       </Image>
     </main>
-  )
+  );
 }
 ```

@@ -1,0 +1,127 @@
+{
+  "name": "@solidjs/ogp",
+  "version": "0.0.0",
+  "description": "An Open Graph / Dynamic image utility library for Solid.",
+  "keywords": [
+    "og-image",
+    "open-graph",
+    "satori",
+    "solid",
+    "solid-js"
+  ],
+  "homepage": "https://github.com/solidjs/solid-ogp/tree/main/packages/ogp#readme",
+  "bugs": {
+    "url": "https://github.com/solidjs/solid-ogp/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solidjs/solid-ogp.git",
+    "directory": "packages/ogp"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "server": [
+        "./dist/server.d.ts"
+      ],
+      "unplugin": [
+        "./dist/unplugin.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "development": {
+        "types": "./dist/dev/index.d.ts",
+        "default": "./dist/dev/index.jsx"
+      },
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.jsx"
+    },
+    "./server": {
+      "development": {
+        "import": {
+          "types": "./dist/dev/server.d.ts",
+          "default": "./dist/dev/server.js"
+        },
+        "require": {
+          "types": "./dist/dev/server.d.cts",
+          "default": "./dist/dev/server.cjs"
+        }
+      },
+      "import": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      },
+      "require": {
+        "types": "./dist/server.d.cts",
+        "default": "./dist/server.cjs"
+      }
+    },
+    "./unplugin": {
+      "development": {
+        "import": {
+          "types": "./dist/dev/unplugin.d.ts",
+          "default": "./dist/dev/unplugin.js"
+        },
+        "require": {
+          "types": "./dist/dev/unplugin.d.cts",
+          "default": "./dist/dev/unplugin.cjs"
+        }
+      },
+      "import": {
+        "types": "./dist/unplugin.d.ts",
+        "default": "./dist/unplugin.js"
+      },
+      "require": {
+        "types": "./dist/unplugin.d.cts",
+        "default": "./dist/unplugin.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "watch": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:pkg": "tsdown --publint --attw",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@babel/core": "^7.28.0",
+    "@solid-mediakit/shared": "^0.0.6",
+    "@vercel/og": "^1.0.1",
+    "satori-html": "^0.3.2",
+    "unplugin": "^3.3.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.5",
+    "@babel/preset-typescript": "^7.27.0",
+    "@solidjs/vite-plugin": "3.0.0-next.27",
+    "@solidjs/web": "2.0.0-rc.21",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^26.2.0",
+    "babel-plugin-tester": "^12.0.0",
+    "publint": "^0.3.23",
+    "solid-js": "2.0.0-rc.21",
+    "tsdown": "^0.22.14",
+    "tslib": "^2.8.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@solidjs/web": "^2.0.0-rc.21",
+    "solid-js": "^2.0.0-rc.21"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,5 +1,5 @@
 <p>
-  <img src="https://assets.solidjs.com/banner?project=OGP&type=core" alt="Solid OGP" />
+  <img src="https://assets.solidjs.com/banner?project=OGP&type=core" alt="OpenGraph" />
 </p>
 
 # @solidjs/ogp

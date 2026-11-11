@@ -1,5 +1,5 @@
-import { Meta } from '@solidjs/meta';
 import type { JSX } from '@solidjs/web';
+import { useHead } from '@solidjs/web';
 import type { ImageResponseOptions } from '@vercel/og';
 import type { ParentProps } from 'solid-js';
 import { children, createMemo, flatten } from 'solid-js';
@@ -27,7 +27,17 @@ export function Image(props: ParentProps): JSX.Element {
 export function OpenGraph(props: ParentProps<{ origin: string }>): JSX.Element {
   const child = children(() => props.children);
   const url = createMemo(() => readUrl(child()));
-  return <Meta property="og:image" content={props.origin + url()} />;
+  // The head registry reads the getter, so the tag follows the url.
+  useHead({
+    tag: 'meta',
+    props: {
+      property: 'og:image',
+      get content(): string {
+        return props.origin + url();
+      },
+    },
+  });
+  return null;
 }
 
 export function urlFromImage(comp: JSX.Element): () => string {

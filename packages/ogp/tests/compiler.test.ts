@@ -16,14 +16,14 @@ const formatResult: ResultFormatter = async (code, options) =>
 pluginTester({
   pluginName: 'OGPlugin',
   formatResult,
-  plugin: transformOG('SolidStart'),
+  plugin: transformOG('Solid'),
   babelOptions: {
     presets: [['@babel/preset-typescript']],
     parserOpts: {
       plugins,
     },
   },
-  fixtures: join(import.meta.dirname, 'fixtures/solid-start'),
+  fixtures: join(import.meta.dirname, 'fixtures/solid'),
 });
 pluginTester({
   pluginName: 'OGPlugin',

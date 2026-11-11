@@ -179,7 +179,7 @@ function pushDynamicImages(
   }
 }
 
-/** Adds the server functions and url components for SolidStart. */
+/** Adds the server functions and url components for Solid 2.0 server functions. */
 export function addDynamicImages(
   images: DynamicImage[],
   t: Types,

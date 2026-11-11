@@ -3,7 +3,11 @@ import type { PluginObj } from '@babel/core';
 import { babel as babelUtils } from '@solid-mediakit/shared';
 import { addDynamicImages, addDynamicImagesTanstack, replaceDynamicImages } from './utils';
 
-export type Runtime = 'SolidStart' | 'TanstackStart';
+/**
+ * Which server function runtime the compiled output targets. `Solid` is Solid
+ * 2.0's own, compiled by @solidjs/vite-plugin with `serverFunctions` on.
+ */
+export type Runtime = 'Solid' | 'TanstackStart';
 
 type PluginFactory = (api: { types: typeof babel.types }) => PluginObj;
 

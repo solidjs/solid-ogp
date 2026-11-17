@@ -1,5 +1,11 @@
 # @solidjs/ogp
 
+## 0.1.1
+
+### Patch Changes
+
+- bd5f45c: Require the stable Solid 2.0 release: the `solid-js` and `@solidjs/web` peer ranges are now `^2.0.0`.
+
 ## 0.1.0
 
 ### Minor Changes
